@@ -1,0 +1,74 @@
+version: "3.7"
+
+services:
+
+  app:
+    build:
+      context: ./web/
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./web:/var/www
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend/
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:1.25-alpine
+    restart: unless-stopped
+    ports:
+      - 8000:80
+    volumes:
+      - ./web:/var/www
+      - ./nginx:/etc/nginx/conf.d
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8.0.36
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: CW
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_PASSWORD: 123456
+      MYSQL_USER: cweb
+    networks:
+      - app-network
+
+  db-test:
+    image: mysql:8.0.36
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: CW
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_PASSWORD: 123456
+      MYSQL_USER: cweb
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db, db-test
+      MYSQL_ROOT_PASSWORD: 123456
+      PMA_ARBITRARY: 1
+    ports:
+      - "7000:80"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
